@@ -1,0 +1,23 @@
+# Customer Support Ticket Intelligence System
+# Dependencies (Zero External APIs required)
+
+# Core Data Processing & Numerical Computing
+pandas>=2.0.0
+numpy>=1.25.0
+
+# Machine Learning & NLP
+scikit-learn>=1.4.0
+joblib>=1.3.0
+
+# Visualization & EDA
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Web Application & API (Optional GUI)
+fastapi>=0.110.0
+uvicorn>=0.28.0
+pydantic>=2.5.0
+
+# Testing & Quality Assurance
+pytest>=8.0.0
+httpx>=0.27.0
