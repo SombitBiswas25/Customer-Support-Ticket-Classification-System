@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chip.textContent = sample.label;
       chip.addEventListener("click", () => {
         ticketDescription.value = sample.text;
-        ticketPriority.value = sample.priority;
+        if (ticketPriority) ticketPriority.value = sample.priority;
         updateCharCount();
         handlePredict();
       });
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnClear.addEventListener("click", () => {
     ticketDescription.value = "";
     customerName.value = "";
-    ticketPriority.value = "Medium";
+    if (ticketPriority) ticketPriority.value = "Medium";
     updateCharCount();
     emptyState.classList.remove("hidden");
     outputContent.classList.add("hidden");
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           description: text,
           customer_name: customerName.value.trim() || null,
-          priority: ticketPriority.value
+          priority: ticketPriority ? ticketPriority.value : "Medium"
         })
       });
 
