@@ -401,6 +401,73 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Inline Instant Result Display (Directly below form buttons) */
+.inline-result-card {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(99, 102, 241, 0.45);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  animation: resultGlow 0.4s ease-out;
+}
+
+@keyframes resultGlow {
+  0% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.inline-result-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inline-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a5b4fc;
+}
+
+.inline-conf-val {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.inline-pred-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.inline-pred-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f3f4f6;
+}
+
+.inline-pred-badge {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: -0.01em;
+}
+
 /* Results Panel Styling */
 .empty-state {
   margin: auto;
@@ -460,12 +527,25 @@ body {
   align-items: center;
 }
 
+.hero-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .result-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text-dim);
+}
+
+.hero-predicted-heading {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f3f4f6;
+  letter-spacing: -0.01em;
 }
 
 .sla-badge {

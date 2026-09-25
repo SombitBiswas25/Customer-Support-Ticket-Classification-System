@@ -112,6 +112,18 @@
             </button>
             <button type="button" id="btnClear" class="btn btn-secondary">Clear</button>
           </div>
+
+          <!-- Inline Instant Result Display (Directly below Predict button) -->
+          <div id="inlineResult" class="inline-result-card hidden">
+            <div class="inline-result-top">
+              <span class="inline-tag">Instant Prediction</span>
+              <span class="inline-conf-val" id="inlineConfidence">Confidence: --%</span>
+            </div>
+            <div class="inline-pred-row">
+              <span class="inline-pred-label">Predicted Category:</span>
+              <span class="inline-pred-badge" id="inlinePredictedCategory">--</span>
+            </div>
+          </div>
         </form>
       </section>
 
@@ -137,7 +149,10 @@
           <!-- Primary Prediction Badge -->
           <div class="prediction-hero">
             <div class="hero-top">
-              <span class="result-label">Predicted Category</span>
+              <div class="hero-title-group">
+                <span class="result-label">Classification Result</span>
+                <h3 class="hero-predicted-heading">Predicted Category:</h3>
+              </div>
               <span class="sla-badge" id="slaBadge">SLA: Within 24h</span>
             </div>
             <div class="category-banner" id="categoryBanner">

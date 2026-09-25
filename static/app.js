@@ -28,6 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const copyLabel = document.getElementById("copyLabel");
   const probBarsContainer = document.getElementById("probBarsContainer");
 
+  // Inline Result Elements (Below Predict Button)
+  const inlineResult = document.getElementById("inlineResult");
+  const inlinePredictedCategory = document.getElementById("inlinePredictedCategory");
+  const inlineConfidence = document.getElementById("inlineConfidence");
+
   // Category Icon & Styling Map
   const CATEGORY_META = {
     "Login Issue": { icon: "🔑", class: "cat-login-issue" },
@@ -86,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCharCount();
     emptyState.classList.remove("hidden");
     outputContent.classList.add("hidden");
+    if (inlineResult) inlineResult.classList.add("hidden");
   });
 
   // Handle Ticket Submission
@@ -139,6 +145,17 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Reset classes and apply category class
     predictedCategory.className = `category-name ${meta.class}`;
+
+    // Update Inline Instant Result (Directly below Predict button)
+    if (inlineResult && inlinePredictedCategory && inlineConfidence) {
+      inlinePredictedCategory.innerHTML = `<span style="font-size: 1.3rem;">${meta.icon}</span> <span class="${meta.class}">${data.predicted_category}</span>`;
+      inlineConfidence.textContent = `Confidence: ${data.confidence.toFixed(1)}%`;
+      inlineResult.classList.remove("hidden");
+      // Trigger subtle pulse
+      inlineResult.style.animation = "none";
+      inlineResult.offsetHeight; // Trigger reflow
+      inlineResult.style.animation = "resultGlow 0.4s ease-out";
+    }
 
     // SLA & Confidence
     slaBadge.textContent = `SLA: ${data.estimated_sla.split('(')[0].trim()}`;
@@ -201,6 +218,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   ticketForm.addEventListener("submit", handlePredict);
+  btnPredict.addEventListener("click", (e) => {
+    // If inside form, let submit handle it, or call handlePredict directly
+    handlePredict(e);
+  });
 
   // Initialize
   renderSampleChips();
