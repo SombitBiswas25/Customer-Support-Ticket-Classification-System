@@ -22,7 +22,7 @@ This project delivers a complete AI/ML solution that:
 3. Classifies tickets into **8 operational categories** with **95.0% test accuracy**.
 4. Generates probabilistic confidence scores and class distributions.
 5. Produces immediate, context-aware automated customer resolution responses (Bonus GenAI task).
-6. Provides both an **interactive Command-Line Interface (CLI)** and a **modern FastAPI Web Interface**.
+6. Provides a **modern, responsive FastAPI Web Interface** with interactive triage and automated responses.
 
 ---
 
@@ -77,14 +77,13 @@ support-ticket-intelligence/
 │   ├── train.py                                  # Model benchmarking, training & eval
 │   ├── predict.py                                # Inference pipeline & test benchmarks
 │   ├── responder.py                              # Offline automated customer response
-│   ├── cli.py                                    # Interactive command-line app (Option A)
-│   └── app.py                                    # FastAPI web server (Option B)
+│   └── app.py                                    # FastAPI web server & inference API
 ├── static/
 │   ├── index.html                                # Web application frontend
 │   ├── style.css                                 # Glassmorphism design system
 │   └── app.js                                    # Dynamic UI & fetch handling
 ├── tests/
-│   └── test_pipeline.py                          # 12 automated unit tests
+│   └── test_pipeline.py                          # 15 automated unit tests
 ├── requirements.txt                              # Clean dependency specification
 ├── SOLUTION_REPORT.md                            # Comprehensive Task 7 technical report
 ├── .gitignore                                    # Git ignore rules
@@ -146,27 +145,8 @@ python src/predict.py --text "I forgot my password and cannot login" --priority 
 
 ---
 
-## 💻 User Interfaces (Task 6)
+## 💻 User Interface (Task 6: Web Application)
 
-### Option A: Interactive Command Line Interface (CLI)
-Start an interactive terminal session:
-```bash
-python src/cli.py
-```
-
-**Interactive Example**:
-```
-Enter Ticket Description > The application is taking too long to load and times out.
-
-------------------------------------------------------------
-PREDICTED CATEGORY : [PERFORMANCE]
-CONFIDENCE SCORE   : 37.1%
-RECOMMENDED ACTION : Infrastructure scaling and database query profiling.
-ESTIMATED SLA      : Within 24 business hours (Standard SLA)
-------------------------------------------------------------
-```
-
-### Option B: Modern Web Application
 Start the local FastAPI web server:
 ```bash
 python src/app.py

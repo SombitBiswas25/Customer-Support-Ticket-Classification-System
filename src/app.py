@@ -1,6 +1,6 @@
 """
 FastAPI Web Application for Customer Support Ticket Classification.
-Assignment Task 6 - Option B.
+Assignment Task 6 (Web Application Interface).
 
 Runs 100% locally with zero external API calls.
 Serves static frontend and RESTful inference endpoints.

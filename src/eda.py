@@ -20,7 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import matplotlib
-matplotlib.use("Agg")  # Non-interactive backend for headless server/CLI execution
+matplotlib.use("Agg")  # Non-interactive backend for headless server execution
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
