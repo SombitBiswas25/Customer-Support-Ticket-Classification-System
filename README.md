@@ -176,7 +176,8 @@ Open your browser and navigate to:
 
 #### Web UI Features:
 - 🌟 Glassmorphic dark theme with vibrant category accents.
-- ⚡ 1-click sample preset chips for fast testing.
+- 🛡️ **Confidence Threshold Fallback**: Automatically catches ambiguous tickets (e.g., *"application is not working properly"*) whose confidence falls below threshold (default 40%, slider adjustable 20%–80%), halts premature dispatch, and routes to Tier-1 Human Triage with a clarification request.
+- ⚡ 1-click sample preset chips (including vague ticket benchmark) for instant testing.
 - 📊 Real-time confidence gauge and 8-category probability distribution.
 - 💬 100% offline automated customer response with one-click copy.
 - ⏱️ Operational SLA estimation and recommended agent triage actions.
@@ -185,11 +186,11 @@ Open your browser and navigate to:
 
 ## 🧪 Automated Testing
 
-Execute the complete test suite verifying text preprocessing, model inference, offline responses, and FastAPI endpoints:
+Execute the complete test suite verifying text preprocessing, model inference, confidence threshold fallback, offline responses, and FastAPI endpoints:
 ```bash
 pytest tests/test_pipeline.py -v
 ```
-*(All 12 unit tests pass).*
+*(All 15 automated unit tests pass).*
 
 ---
 

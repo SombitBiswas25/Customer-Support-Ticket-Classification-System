@@ -106,11 +106,59 @@ def generate_automated_response(
     customer_name: Optional[str] = None,
     priority: str = "Medium",
     confidence: Optional[float] = None,
+    is_low_confidence: bool = False,
+    confidence_threshold: float = 40.0,
 ) -> Dict[str, Any]:
     """
     Generates a professional, automated support response for the customer.
     Runs completely offline with zero external API calls.
+    
+    If is_low_confidence is True, activates the operational fallback response:
+    instead of sending an uncertain category action, it politely requests
+    clarification and routes the ticket to manual human triage.
     """
+    salutation = f"Dear {customer_name}," if customer_name else "Dear Customer,"
+    sla_time = PRIORITY_SLA.get(priority, "Within 24 hours")
+
+    # Fallback response for ambiguous / low-confidence predictions
+    if is_low_confidence:
+        desc_snippet = ticket_description.strip()
+        if len(desc_snippet) > 80:
+            desc_snippet = desc_snippet[:77] + "..."
+
+        core_advice = (
+            f"Thank you for contacting customer support. We have received your inquiry:\n"
+            f"\"{desc_snippet}\"\n\n"
+            "Because this description does not contain sufficient technical details for automated routing, "
+            "your ticket has been placed into our Tier-1 Priority Triage Queue for manual evaluation by a support engineer."
+        )
+        next_step = (
+            "To help us resolve your issue promptly, please reply to this ticket with additional details:\n"
+            "  • Any exact error messages, status codes (e.g., 500, 403), or screenshots\n"
+            "  • The specific screen or action you were performing\n"
+            "  • Your operating system and browser version"
+        )
+        conf_str = f"{confidence:.1f}%" if confidence is not None else "Unknown"
+        confidence_disclaimer = (
+            f"\n\n[Automated Triage Dispatch - Low Confidence Fallback Activated: "
+            f"Model suggestion: '{category}' at {conf_str} (below {confidence_threshold:.1f}% threshold)]"
+        )
+        response_text = (
+            f"{salutation}\n\n"
+            f"{core_advice}\n\n"
+            f"{next_step}\n\n"
+            f"Estimated Resolution Timeframe: {sla_time}.\n\n"
+            f"Best regards,\nCustomer Support Operations Team"
+            f"{confidence_disclaimer}"
+        )
+        return {
+            "category": category,
+            "response_text": response_text,
+            "recommended_action": "Route to Tier-1 Support Desk for manual triage. Request error details/screenshots from customer.",
+            "estimated_sla": sla_time,
+        }
+
+    # Standard confident response dispatch
     info = CATEGORY_RESPONSES.get(
         category,
         {
@@ -120,9 +168,6 @@ def generate_automated_response(
             "recommended_action": "General support ticket triage.",
         },
     )
-
-    salutation = f"Dear {customer_name}," if customer_name else "Dear Customer,"
-    sla_time = PRIORITY_SLA.get(priority, "Within 24 hours")
 
     # Keyword enrichment
     desc_lower = ticket_description.lower()

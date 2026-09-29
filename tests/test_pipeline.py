@@ -135,6 +135,51 @@ def test_api_predict_empty_validation(client):
     assert response.status_code == 422 or response.status_code == 400
 
 
+def test_api_predict_with_fallback(client):
+    """
+    Verifies that low-confidence / ambiguous tickets activate the fallback in the API.
+    """
+    payload = {
+        "description": "application is not working properly",
+        "confidence_threshold": 40.0
+    }
+    response = client.post("/api/predict", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_low_confidence"] is True
+    assert data["routing_category"] == "Needs Clarification / Manual Review"
+    assert data["triage_status"] == "Manual Triage Required"
+    assert "Tier-1 Support Desk" in data["recommended_action"]
+
+
+def test_confidence_threshold_fallback_logic():
+    """
+    Directly tests predict_ticket fallback behavior on vague descriptions.
+    """
+    res = predict_ticket("application is not working properly", confidence_threshold=40.0)
+    assert res["is_low_confidence"] is True
+    assert res["routing_category"] == "Needs Clarification / Manual Review"
+    assert res["triage_status"] == "Manual Triage Required"
+    assert "Tier-1" in res["recommended_action"]
+    assert "not contain sufficient technical details" in res["suggested_response"]
+
+
+def test_confidence_threshold_custom_bounds():
+    """
+    Tests dynamic threshold adjustment (permissive vs strict).
+    """
+    text = "application is not working properly"
+    # Permissive threshold: 20% should NOT trigger fallback since confidence is ~33.7%
+    res_permissive = predict_ticket(text, confidence_threshold=20.0)
+    assert res_permissive["is_low_confidence"] is False
+    assert res_permissive["triage_status"] == "Automated Dispatch"
+
+    # Strict threshold: 60% MUST trigger fallback
+    res_strict = predict_ticket(text, confidence_threshold=60.0)
+    assert res_strict["is_low_confidence"] is True
+    assert res_strict["triage_status"] == "Manual Triage Required"
+
+
 def test_api_root_frontend(client):
     response = client.get("/")
     assert response.status_code == 200

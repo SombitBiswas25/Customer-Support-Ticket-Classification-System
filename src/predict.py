@@ -44,15 +44,24 @@ def load_model(model_path: Path = DEFAULT_MODEL_PATH) -> Dict[str, Any]:
     return _CACHED_MODEL_PAYLOAD
 
 
+DEFAULT_CONFIDENCE_THRESHOLD = 40.0
+
+
 def predict_ticket(
     ticket_description: str,
     customer_name: Optional[str] = None,
     priority: str = "Medium",
+    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
     model_path: Path = DEFAULT_MODEL_PATH,
 ) -> Dict[str, Any]:
     """
     Predicts the category of a support ticket description and calculates
     confidence probability along with an automated resolution suggestion.
+
+    Includes a Confidence Threshold Fallback:
+    If confidence < confidence_threshold, the system flags the ticket as
+    low-confidence / ambiguous, suspends automated category dispatch,
+    and routes the inquiry to Tier-1 human triage.
     """
     payload = load_model(model_path)
     pipeline = payload["pipeline"]
@@ -66,6 +75,10 @@ def predict_ticket(
             "cleaned_description": "",
             "predicted_category": "Unknown",
             "confidence": 0.0,
+            "confidence_threshold": round(float(confidence_threshold), 1),
+            "is_low_confidence": True,
+            "routing_category": "Needs Clarification / Manual Review",
+            "triage_status": "Invalid Input",
             "all_probabilities": {},
             "suggested_response": "Please enter a valid ticket description.",
             "recommended_action": "Request more information from user.",
@@ -77,6 +90,19 @@ def predict_ticket(
     best_idx = int(np.argmax(probabilities))
     best_category = classes[best_idx]
     confidence_score = float(probabilities[best_idx]) * 100.0
+
+    # Evaluate Confidence Threshold Fallback
+    is_low_confidence = confidence_score < float(confidence_threshold)
+    routing_cat = (
+        "Needs Clarification / Manual Review"
+        if is_low_confidence
+        else best_category
+    )
+    triage_status = (
+        "Manual Triage Required"
+        if is_low_confidence
+        else "Automated Dispatch"
+    )
 
     # Sort all probabilities descending
     sorted_indices = np.argsort(probabilities)[::-1]
@@ -92,6 +118,8 @@ def predict_ticket(
         customer_name=customer_name,
         priority=priority,
         confidence=confidence_score,
+        is_low_confidence=is_low_confidence,
+        confidence_threshold=confidence_threshold,
     )
 
     return {
@@ -99,6 +127,10 @@ def predict_ticket(
         "cleaned_description": cleaned,
         "predicted_category": best_category,
         "confidence": round(confidence_score, 2),
+        "confidence_threshold": round(float(confidence_threshold), 1),
+        "is_low_confidence": is_low_confidence,
+        "routing_category": routing_cat,
+        "triage_status": triage_status,
         "all_probabilities": all_probs,
         "suggested_response": response_meta["response_text"],
         "recommended_action": response_meta["recommended_action"],

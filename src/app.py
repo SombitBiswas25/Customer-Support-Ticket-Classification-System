@@ -36,6 +36,7 @@ class TicketRequest(BaseModel):
     description: str = Field(..., min_length=2, description="Customer ticket description")
     customer_name: Optional[str] = Field(None, description="Optional customer name for personalization")
     priority: Optional[str] = Field("Medium", description="Ticket priority (Low, Medium, High, Critical)")
+    confidence_threshold: Optional[float] = Field(40.0, description="Confidence threshold (%) for automated triage fallback")
 
 
 class TicketResponse(BaseModel):
@@ -43,6 +44,10 @@ class TicketResponse(BaseModel):
     cleaned_description: str
     predicted_category: str
     confidence: float
+    confidence_threshold: float
+    is_low_confidence: bool
+    routing_category: str
+    triage_status: str
     all_probabilities: dict
     suggested_response: str
     recommended_action: str
@@ -74,7 +79,9 @@ async def health_check():
             "model_name": model_payload.get("model_name", "Logistic Regression"),
             "categories_supported": len(model_payload.get("classes", [])),
             "offline_mode": True,
-            "external_api_calls": 0
+            "external_api_calls": 0,
+            "confidence_threshold_fallback": True,
+            "default_confidence_threshold": 40.0,
         }
     except Exception as exc:
         return {"status": "degraded", "error": str(exc)}
@@ -89,17 +96,23 @@ async def get_sample_tickets():
 @app.post("/api/predict", response_model=TicketResponse)
 async def api_predict(ticket: TicketRequest):
     """
-    Classifies a ticket description into one of 8 categories with confidence score
-    and offline automated response.
+    Classifies a ticket description into one of 8 categories with confidence score,
+    threshold fallback evaluation, and offline automated response.
     """
     if not ticket.description.strip():
         raise HTTPException(status_code=400, detail="Ticket description cannot be empty.")
 
     try:
+        threshold = (
+            ticket.confidence_threshold
+            if ticket.confidence_threshold is not None
+            else 40.0
+        )
         result = predict_ticket(
             ticket_description=ticket.description,
             customer_name=ticket.customer_name,
-            priority=ticket.priority or "Medium"
+            priority=ticket.priority or "Medium",
+            confidence_threshold=threshold,
         )
         return result
     except Exception as exc:

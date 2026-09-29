@@ -223,7 +223,44 @@ To thoroughly test out-of-sample generalization, the model was tested against **
 
 ---
 
-## H. System Limitations
+## H. Confidence Threshold Fallback & Ambiguity Mitigation
+
+In real customer service operations, incoming tickets frequently suffer from **lexical ambiguity** or **dataset correlation bias**. For instance, a vague query such as *"application is not working properly"* contains terms (`"working"`, `"not working"`, `"is not"`) that frequently appeared in `"Login Issue"` records in the training set (`"Password reset is not working"`), while lacking specific crash or error keywords required by `"Application Error"`.
+
+Consequently, the statistical model produces a low-confidence guess ($33.7\%$). In unmitigated systems, blindly trusting the argmax class would route the user to password reset workflows, creating an unsatisfactory customer experience.
+
+### Operational Fallback Architecture
+To prevent misrouting and false automated dispatches, an enterprise-grade **Confidence Threshold Fallback** was implemented across the pipeline:
+
+```
+Raw Customer Ticket ("application is not working properly")
+           │
+           ▼
+[ TF-IDF + Logistic Regression Pipeline ]
+           │
+           ├── Predicted Class: Login Issue
+           └── Confidence Score: 33.7%
+           │
+           ▼
+[ Decision Gate: Confidence >= Threshold (Default: 40.0%) ? ]
+     │                                           │
+    YES                                          NO (Fallback Activated)
+     │                                           │
+     ▼                                           ▼
+[ Automated Category Dispatch ]            [ Tier-1 Human Triage Queue ]
+• Category: Login Issue                    • Routing: Needs Clarification / Manual Review
+• Triage Status: Automated Dispatch        • Triage Status: Manual Triage Required
+• Action: Password reset link dispatched   • Action: Route to Tier-1 desk for review
+• Auto-Response: Specific guidance         • Auto-Response: Empathetic clarification request
+```
+
+1. **Configurable Operational Threshold**: Defaults to $40.0\%$ (empirically calibrated just below unambiguous benchmark tickets, which range from $36.8\%$ to $59.5\%$), with interactive adjustment between $20\%$ and $80\%$.
+2. **Safe Automated Response**: Instead of sending a misleading password reset, the offline generator sends an empathetic acknowledgment informing the customer that an agent has taken ownership and politely requesting error codes or screenshots.
+3. **Audit Trail Transparency**: Both the raw model suggestion (`candidate: Login Issue`) and the operational routing category (`Needs Clarification / Manual Review`) are preserved in telemetry.
+
+---
+
+## I. System Limitations
 
 While the current system performs satisfactorily for standard operational tickets, several practical limitations should be noted:
 1. **Dataset Volume**: The dataset contains 200 records. While suitable for baseline evaluation and establishing feasibility, production environments encounter tens of thousands of tickets with far greater vocabulary diversity.
@@ -233,7 +270,7 @@ While the current system performs satisfactorily for standard operational ticket
 
 ---
 
-## I. Future Production Enhancements
+## J. Future Production Enhancements
 
 If deploying this system into a high-scale production environment, the following iterative roadmap is recommended:
 1. **Larger Corpus & Active Learning**: Scale to 50,000+ real customer tickets with human-in-the-loop active learning, where low-confidence predictions ($< 60\%$) are flagged for agent verification and continuously retrained.

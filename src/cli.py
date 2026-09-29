@@ -64,8 +64,16 @@ def run_interactive_cli():
             result = predict_ticket(user_input)
 
             print("\n" + "-" * 60)
-            print(f"PREDICTED CATEGORY : [{result['predicted_category'].upper()}]")
-            print(f"CONFIDENCE SCORE   : {result['confidence']:.1f}%")
+            if result.get("is_low_confidence"):
+                print("⚠️  CONFIDENCE THRESHOLD FALLBACK ACTIVATED")
+                print(f"TRIAGE STATUS      : [{result['triage_status'].upper()}]")
+                print(f"ROUTING DESTINATION: {result['routing_category']}")
+                print(f"TOP ML SUGGESTION  : {result['predicted_category']} (Uncertain)")
+                print(f"CONFIDENCE SCORE   : {result['confidence']:.1f}% (Below {result['confidence_threshold']:.1f}% threshold)")
+            else:
+                print(f"PREDICTED CATEGORY : [{result['predicted_category'].upper()}]")
+                print(f"CONFIDENCE SCORE   : {result['confidence']:.1f}% (Confident Dispatch)")
+                print(f"TRIAGE STATUS      : [{result['triage_status'].upper()}]")
             print(f"RECOMMENDED ACTION : {result['recommended_action']}")
             print(f"ESTIMATED SLA      : {result['estimated_sla']}")
             print("-" * 60)

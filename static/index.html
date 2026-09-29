@@ -90,6 +90,29 @@
             </div>
           </div>
 
+          <!-- Confidence Fallback Threshold Control -->
+          <div class="form-group threshold-group">
+            <div class="threshold-header">
+              <div class="threshold-title-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <label for="thresholdSlider" class="form-label mb-0">Confidence Fallback Threshold</label>
+              </div>
+              <span id="thresholdDisplay" class="threshold-badge">40%</span>
+            </div>
+            <div class="threshold-slider-wrapper">
+              <input type="range" id="thresholdSlider" min="20" max="80" value="40" step="5" class="threshold-slider">
+              <div class="slider-ticks">
+                <span>20% (Permissive)</span>
+                <span>40% (Standard)</span>
+                <span>60% (Strict)</span>
+                <span>80%</span>
+              </div>
+            </div>
+            <p class="threshold-hint">Predictions below this confidence level automatically trigger human triage fallback.</p>
+          </div>
+
           <!-- Action Buttons -->
           <div class="form-actions">
             <button type="submit" id="btnPredict" class="btn btn-primary">
@@ -105,11 +128,11 @@
           <!-- Inline Instant Result Display (Directly below Predict button) -->
           <div id="inlineResult" class="inline-result-card hidden">
             <div class="inline-result-top">
-              <span class="inline-tag">Instant Prediction</span>
+              <span class="inline-tag" id="inlineTag">Instant Prediction</span>
               <span class="inline-conf-val" id="inlineConfidence">Confidence: --%</span>
             </div>
             <div class="inline-pred-row">
-              <span class="inline-pred-label">Predicted Category:</span>
+              <span class="inline-pred-label" id="inlinePredLabel">Assigned Routing:</span>
               <span class="inline-pred-badge" id="inlinePredictedCategory">--</span>
             </div>
           </div>
@@ -135,24 +158,52 @@
 
         <!-- Populated Prediction Output -->
         <div id="outputContent" class="output-content hidden">
+
+          <!-- Fallback Alert Banner (Active when confidence < threshold) -->
+          <div id="fallbackAlert" class="fallback-banner hidden">
+            <div class="fallback-banner-content">
+              <div class="fallback-icon-wrap">
+                <span class="fallback-icon">⚠️</span>
+              </div>
+              <div class="fallback-text">
+                <div class="fallback-title-row">
+                  <span class="fallback-title">Low Confidence Fallback Activated</span>
+                  <span class="fallback-tag">Tier-1 Human Review</span>
+                </div>
+                <p class="fallback-message">
+                  Model confidence (<strong id="fallbackConfVal">33.7%</strong>) is below the operational threshold (<strong id="fallbackThreshVal">40.0%</strong>). Automated resolution has been halted to prevent routing errors.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Primary Prediction Badge -->
-          <div class="prediction-hero">
+          <div class="prediction-hero" id="predictionHero">
             <div class="hero-top">
               <div class="hero-title-group">
                 <span class="result-label">Classification Result</span>
-                <h3 class="hero-predicted-heading">Predicted Category:</h3>
+                <h3 class="hero-predicted-heading" id="heroHeading">Assigned Routing:</h3>
               </div>
-              <span class="sla-badge" id="slaBadge">SLA: Within 24h</span>
+              <div class="hero-badges">
+                <span class="triage-badge" id="triageBadge">Automated Dispatch</span>
+                <span class="sla-badge" id="slaBadge">SLA: Within 24h</span>
+              </div>
             </div>
             <div class="category-banner" id="categoryBanner">
               <span class="category-icon" id="categoryIcon">⚡</span>
-              <span class="category-name" id="predictedCategory">Login Issue</span>
+              <div class="category-title-wrap">
+                <span class="category-name" id="predictedCategory">Login Issue</span>
+                <span class="category-subtext hidden" id="categorySubtext">Model candidate: Login Issue (Low Confidence)</span>
+              </div>
             </div>
 
             <!-- Confidence Bar -->
             <div class="confidence-container">
               <div class="confidence-header">
-                <span class="conf-title">Model Confidence</span>
+                <div class="conf-title-wrap">
+                  <span class="conf-title">Model Confidence</span>
+                  <span class="conf-status-tag" id="confStatusTag">Confident</span>
+                </div>
                 <span class="conf-value" id="confidenceValue">95.4%</span>
               </div>
               <div class="progress-track">

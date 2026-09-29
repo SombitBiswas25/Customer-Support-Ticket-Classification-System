@@ -28,8 +28,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const copyLabel = document.getElementById("copyLabel");
   const probBarsContainer = document.getElementById("probBarsContainer");
 
+  // Threshold and Fallback Elements
+  const thresholdSlider = document.getElementById("thresholdSlider");
+  const thresholdDisplay = document.getElementById("thresholdDisplay");
+  const fallbackAlert = document.getElementById("fallbackAlert");
+  const fallbackConfVal = document.getElementById("fallbackConfVal");
+  const fallbackThreshVal = document.getElementById("fallbackThreshVal");
+  const heroHeading = document.getElementById("heroHeading");
+  const triageBadge = document.getElementById("triageBadge");
+  const categorySubtext = document.getElementById("categorySubtext");
+  const confStatusTag = document.getElementById("confStatusTag");
+
   // Inline Result Elements (Below Predict Button)
   const inlineResult = document.getElementById("inlineResult");
+  const inlineTag = document.getElementById("inlineTag");
+  const inlinePredLabel = document.getElementById("inlinePredLabel");
   const inlinePredictedCategory = document.getElementById("inlinePredictedCategory");
   const inlineConfidence = document.getElementById("inlineConfidence");
 
@@ -45,8 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
     "Data Issue": { icon: "🗄️", class: "cat-data-issue" },
   };
 
-  // Sample Presets for Quick Testing
+  // Sample Presets for Quick Testing (Including Vague Ticket for Fallback Verification)
   const SAMPLES = [
+    { label: "Vague (Not Working)", text: "application is not working properly", priority: "Medium" },
     { label: "Login Reset", text: "I forgot my password and cannot sign into my account.", priority: "High" },
     { label: "App Crash", text: "The application gives a 500 error and crashes when clicking save.", priority: "Critical" },
     { label: "Sales Report", text: "Please help me generate the monthly sales and revenue report.", priority: "Low" },
@@ -56,6 +70,17 @@ document.addEventListener("DOMContentLoaded", () => {
     { label: "Access Denied", text: "Access denied when opening the admin settings dashboard.", priority: "High" },
     { label: "Data Missing", text: "Customer records entered yesterday are no longer visible in system.", priority: "Medium" },
   ];
+
+  // Initialize Threshold Slider Listener
+  if (thresholdSlider && thresholdDisplay) {
+    thresholdSlider.addEventListener("input", () => {
+      thresholdDisplay.textContent = `${thresholdSlider.value}%`;
+      // If we have text in the box and results are showing, re-run prediction seamlessly
+      if (ticketDescription.value.trim() && !outputContent.classList.contains("hidden")) {
+        handlePredict();
+      }
+    });
+  }
 
   // Initialize Sample Chips
   function renderSampleChips() {
@@ -107,6 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
     btnPredict.disabled = true;
     btnSpinner.style.display = "inline-block";
 
+    const thresholdVal = thresholdSlider ? parseFloat(thresholdSlider.value) : 40.0;
+
     try {
       const response = await fetch("/api/predict", {
         method: "POST",
@@ -114,7 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           description: text,
           customer_name: customerName.value.trim() || null,
-          priority: ticketPriority ? ticketPriority.value : "Medium"
+          priority: ticketPriority ? ticketPriority.value : "Medium",
+          confidence_threshold: thresholdVal,
         })
       });
 
@@ -140,24 +168,87 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Category Meta & Styling
     const meta = CATEGORY_META[data.predicted_category] || { icon: "📌", class: "" };
-    categoryIcon.textContent = meta.icon;
-    predictedCategory.textContent = data.predicted_category;
-    
-    // Reset classes and apply category class
-    predictedCategory.className = `category-name ${meta.class}`;
+    const isFallback = Boolean(data.is_low_confidence);
 
-    // Update Inline Instant Result (Directly below Predict button)
-    if (inlineResult && inlinePredictedCategory && inlineConfidence) {
-      inlinePredictedCategory.innerHTML = `<span style="font-size: 1.3rem;">${meta.icon}</span> <span class="${meta.class}">${data.predicted_category}</span>`;
-      inlineConfidence.textContent = `Confidence: ${data.confidence.toFixed(1)}%`;
-      inlineResult.classList.remove("hidden");
-      // Trigger subtle pulse
+    if (isFallback) {
+      // 1. Show Low Confidence Warning Banner
+      if (fallbackAlert) {
+        fallbackAlert.classList.remove("hidden");
+        if (fallbackConfVal) fallbackConfVal.textContent = `${data.confidence.toFixed(1)}%`;
+        if (fallbackThreshVal) fallbackThreshVal.textContent = `${data.confidence_threshold.toFixed(1)}%`;
+      }
+
+      // 2. Adjust Hero Routing
+      if (heroHeading) heroHeading.textContent = "Assigned Routing:";
+      if (triageBadge) {
+        triageBadge.className = "triage-badge triage-fallback";
+        triageBadge.textContent = "⚠️ Manual Triage Required";
+      }
+
+      categoryIcon.textContent = "⚠️";
+      predictedCategory.textContent = data.routing_category || "Needs Clarification / Manual Review";
+      predictedCategory.className = "category-name cat-fallback";
+
+      if (categorySubtext) {
+        categorySubtext.classList.remove("hidden");
+        categorySubtext.innerHTML = `Model Suggestion: <strong>${meta.icon} ${data.predicted_category}</strong> (Uncertain: ${data.confidence.toFixed(1)}% &lt; ${data.confidence_threshold.toFixed(1)}% threshold)`;
+      }
+
+      // 3. Confidence Status Tag & Bar
+      if (confStatusTag) {
+        confStatusTag.className = "conf-status-tag conf-status-low";
+        confStatusTag.textContent = "Low Confidence";
+      }
+      confidenceFill.className = "progress-fill fill-warning";
+
+      // 4. Update Inline Instant Result
+      if (inlineResult && inlinePredictedCategory && inlineConfidence) {
+        if (inlineTag) inlineTag.textContent = "⚠️ Fallback Active";
+        if (inlinePredLabel) inlinePredLabel.textContent = "Assigned Routing:";
+        inlinePredictedCategory.innerHTML = `<span style="font-size: 1.15rem;">⚠️</span> <span class="cat-fallback">Needs Review</span> <span style="font-size: 0.78rem; color: #9ca3af;">(Top ML: ${data.predicted_category})</span>`;
+        inlineConfidence.textContent = `Confidence: ${data.confidence.toFixed(1)}% (< ${data.confidence_threshold.toFixed(1)}%)`;
+        inlineResult.classList.remove("hidden");
+      }
+    } else {
+      // Standard Confident Prediction
+      if (fallbackAlert) fallbackAlert.classList.add("hidden");
+
+      if (heroHeading) heroHeading.textContent = "Predicted Category:";
+      if (triageBadge) {
+        triageBadge.className = "triage-badge triage-automated";
+        triageBadge.textContent = "Automated Dispatch";
+      }
+
+      categoryIcon.textContent = meta.icon;
+      predictedCategory.textContent = data.predicted_category;
+      predictedCategory.className = `category-name ${meta.class}`;
+
+      if (categorySubtext) categorySubtext.classList.add("hidden");
+
+      if (confStatusTag) {
+        confStatusTag.className = "conf-status-tag conf-status-confident";
+        confStatusTag.textContent = "Confident Dispatch";
+      }
+      confidenceFill.className = "progress-fill";
+
+      // Update Inline Instant Result
+      if (inlineResult && inlinePredictedCategory && inlineConfidence) {
+        if (inlineTag) inlineTag.textContent = "Instant Prediction";
+        if (inlinePredLabel) inlinePredLabel.textContent = "Predicted Category:";
+        inlinePredictedCategory.innerHTML = `<span style="font-size: 1.3rem;">${meta.icon}</span> <span class="${meta.class}">${data.predicted_category}</span>`;
+        inlineConfidence.textContent = `Confidence: ${data.confidence.toFixed(1)}%`;
+        inlineResult.classList.remove("hidden");
+      }
+    }
+
+    // Trigger subtle pulse animation on inline card
+    if (inlineResult) {
       inlineResult.style.animation = "none";
       inlineResult.offsetHeight; // Trigger reflow
       inlineResult.style.animation = "resultGlow 0.4s ease-out";
     }
 
-    // SLA & Confidence
+    // SLA & Confidence Values
     slaBadge.textContent = `SLA: ${data.estimated_sla.split('(')[0].trim()}`;
     confidenceValue.textContent = `${data.confidence.toFixed(1)}%`;
     confidenceFill.style.width = `${Math.min(data.confidence, 100)}%`;
@@ -182,7 +273,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const fillDiv = document.createElement("div");
       fillDiv.className = "prob-bar-fill";
       if (cat === data.predicted_category) {
-        fillDiv.style.background = "linear-gradient(90deg, #6366f1, #38bdf8)";
+        fillDiv.style.background = isFallback
+          ? "linear-gradient(90deg, #f59e0b, #ef4444)"
+          : "linear-gradient(90deg, #6366f1, #38bdf8)";
       } else {
         fillDiv.style.background = "rgba(255, 255, 255, 0.25)";
       }
